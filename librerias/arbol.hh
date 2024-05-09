@@ -9,18 +9,23 @@ class Node {
     public:
         string id;
         vector<Articulo> articulos;
-        int area_ocupada;
-
+        int area_pagina;
+        int area_sin_ocupar; // f(x)
+        int f_estim;
+        int nivel;
         Node* left;
         Node* right;
 
         // A constructor to the struct node
         // that inserts value in the data variable.
 
-        Node(vector<Articulo> _articulos, string _id)
+        Node(vector<Articulo> _articulos, string _id, int _area_pagina)
         {
             id = _id;
+            area_pagina = _area_pagina;
             articulos = _articulos;
+            f_estim = 0;
+            nivel = 0;
             left = NULL;//Left child is initialized to NULL
             right = NULL;//Right child is initialized to NULL
 
@@ -28,7 +33,7 @@ class Node {
             for (auto& articulo : articulos){
                 total += articulo.area;
             }
-            area_ocupada = total;
+            area_sin_ocupar = area_pagina - total; 
         }
 
         static void print_tree(Node* root, int tab){

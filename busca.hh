@@ -6,8 +6,16 @@
 #include <string>
 #include "./librerias/pagina.hh"
 #include "./librerias/articulo.hh"
+#include <priority_queue>
 
 using namespace std;
+
+struct CompareNodes {
+    bool operator()(const Node& ln, const Node& rn) {
+        // Ordenar por el segundo elemento de cada par (int)
+        return ln.f_estim > rn.f_estim or ((ln.f_estim == rn.f_estim) and (ln.id > rn.id));
+    }
+};
 
 void abrir_fichero_lectura(string nombre_fichero, ifstream& f_in);
 

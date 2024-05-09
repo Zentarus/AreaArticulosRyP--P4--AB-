@@ -123,7 +123,7 @@ Articulo calcular_articulo_interseccion_pareja(Articulo a, Articulo b){
     return Articulo(0, res_ancho, res_alto, res_x, res_y);
 }
 
-int calcular_area_interseccion_total(const vector<Articulo>& articulos) {
+int calcular_area_articulos_solapados(const vector<Articulo>& articulos) {
     if(articulos.size() == 0){
         return 0;
     }
@@ -154,7 +154,7 @@ int calcular_area(const vector<Articulo>& articulos) {
 
     for(vector<Articulo> conjunto : partes){
 
-        int area_interseccion = calcular_area_interseccion_total(conjunto);
+        int area_interseccion = calcular_area_articulos_solapados(conjunto);
         if(conjunto.size() % 2 == 0){
             area_total -= area_interseccion;
         } else {
@@ -203,16 +203,21 @@ bool aplicar_poda(const Pagina& pagina, const vector<Articulo>& articulos_actual
 void construir_siguiente_nivel(Pagina& pagina, Node* raiz, vector<Articulo> articulos_actuales, vector<Articulo>& articulos_optimos, int& area_optima, int nivel){
     int area_actual = calcular_area(articulos_actuales);
 
-    if(area_actual > area_optima) {
+    if(nivel == pagina.articulos.size() && area_actual > area_optima){
         area_optima = area_actual;
         articulos_optimos = articulos_actuales;
-
-    }
-
-    if (nivel < pagina.articulos.size()){ // Para que en la siguiente instruccion no se acceda a una componente fuera de rango
-                                          // Tambien es la condición de poda para no pasarnos del número de articulos
+                
+    } else if (nivel < pagina.articulos.size()){    // Para que en la siguiente instruccion no se acceda a una componente fuera de rango
+                                                    // Tambien es la condición de poda para no pasarnos del número de articulos
         Articulo sig_articulo = pagina.articulos[nivel];
         
+
+
+
+
+
+
+
         if (!aplicar_poda(pagina, articulos_actuales, sig_articulo, nivel, area_optima))
         {
             if(!hay_interseccion_con_sig_articulo(articulos_actuales, sig_articulo, nivel)){
@@ -235,6 +240,7 @@ void construir_siguiente_nivel(Pagina& pagina, Node* raiz, vector<Articulo> arti
         }
     }
 }
+
 
 int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos){
     int area_optima = 0;
