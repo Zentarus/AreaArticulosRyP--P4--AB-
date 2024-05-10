@@ -43,8 +43,8 @@ int calcular_area(const vector<Articulo>& articulos);
 
 int calcular_area_articulos_sin_solapar(vector<Articulo> articulos_sin_solapar);
 
-int area_restante_maxima(const Pagina& pagina, const vector<Articulo>& articulos_actuales, int nivel);
+int area_restante_maxima(const Pagina& pagina, int nivel);
 
-int calcular_func_estimacion(Node* nodo, Pagina pagina, vector<Articulo> art_restantes);
+int calcular_func_estimacion(Node* nodo, Pagina pagina);
 
 #endif

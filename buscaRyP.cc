@@ -78,7 +78,7 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
 
     Node* raiz = new Node(articulos_insertados, "", pagina.area);
     raiz->nivel = 0;
-    raiz->f_estim = calcular_func_estimacion(raiz, pagina, pagina.articulos);
+    raiz->f_estim = calcular_func_estimacion(raiz, pagina); 
     cola_nodos.push(raiz);
 
     bool terminar = false;
@@ -115,7 +115,7 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
                     
     art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
     Node* nodo_izq = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
-    nodo_izq->f_estim = calcular_func_estimacion(nodo_izq, pagina, pagina.articulos);
+    nodo_izq->f_estim = calcular_func_estimacion(nodo_izq, pagina);
 
     if(nodo_izq->f_estim <= area_minima){
         cola_nodos.push(nodo_izq);
@@ -130,8 +130,7 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
     
     Node* nodo_dch = new Node(art_insertados, nodo_a_expandir->id + "-/", pagina.area); // no metemos el articulo nuevo
     nodo_dch->nivel = nodo_a_expandir->nivel + 1;
-    nodo_dch->f_estim = calcular_func_estimacion(nodo_dch, pagina, pagina.articulos); // Llamar con pagina.articulos en calcular_func_estimacion esta bien? 
-                                                                                      // Tiene todos los articulos, no los restantes
+    nodo_dch->f_estim = calcular_func_estimacion(nodo_dch, pagina);
 
     if(nodo_dch->f_estim <= area_minima){
         cola_nodos.push(nodo_dch);
@@ -245,24 +244,35 @@ int calcular_area_articulos_sin_solapar(vector<Articulo> articulos_sin_solapar){
     return total;
 }
 
-int area_restante_maxima(const Pagina& pagina, const vector<Articulo>& articulos_actuales, int nivel){
-    vector<Articulo> articulos_restantes = articulos_actuales;
+/**
+ * @brief 
+ * 
+ * @param pagina: Página que contiene los articulos
+ * @param nivel: Valor que indica cuántos articulos hay añadidos 
+ * @return int 
+ */
+int area_restante_maxima(const Pagina& pagina, int nivel){
+    vector<Articulo> articulos_restantes;
     for (int i = nivel; i < pagina.num_articulos; i++){
         articulos_restantes.push_back(pagina.articulos[i]);
     }
-
     return calcular_area(articulos_restantes);
 }
 
 
-int calcular_func_estimacion(Node* nodo, Pagina pagina, vector<Articulo> art_restantes){
-    int area_heuristica = area_restante_maxima(pagina, art_restantes, nodo->nivel);
-    int area_sin_ocupar_total = calcular_area_articulos_sin_solapar(art_restantes);
-    return pagina.area - area_sin_ocupar_total - area_heuristica;
+/**
+ * @brief 
+ * 
+ * @param nodo: Nodo del que se va a calcular su función de estimación
+ * @param pagina: Página que contiene los articulos
+ * @return int 
+ */
+int calcular_func_estimacion(Node* nodo, Pagina pagina){
+    int area_heuristica = area_restante_maxima(pagina, nodo->nivel);
+    int area_sin_ocupar_total = calcular_area_articulos_sin_solapar(nodo->articulos);
+    return pagina.area - (area_sin_ocupar_total + area_heuristica);
 
 }
-
-
 
 int main(int argc, char *argv[]){
     double tiempo_ejecucion = 0.0;
@@ -271,7 +281,6 @@ int main(int argc, char *argv[]){
     int num_pag = 1;
     int area_solucion = 0;
     vector<Articulo> articulos_solucion = {};
-
 
     if (argc < 3){
         cout << "ERROR: Numero de parametros invalido" << endl;
