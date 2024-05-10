@@ -1,0 +1,5 @@
+
+Pagina 1
+	Tiempo: 14.9593 ms
+	Area: 0 mm
+	Articulos:

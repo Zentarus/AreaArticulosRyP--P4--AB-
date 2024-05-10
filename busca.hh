@@ -6,7 +6,7 @@
 #include <string>
 #include "./librerias/pagina.hh"
 #include "./librerias/articulo.hh"
-#include <priority_queue>
+#include <queue>
 
 using namespace std;
 

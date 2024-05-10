@@ -72,7 +72,7 @@ void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<A
 
 
 int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos){
-    priority_queue<Node, vector<Node>, CompareNodes> cola_nodos;
+    priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos;
     vector<Articulo> articulos_insertados;
     int area_minima = 0;
 
@@ -85,23 +85,24 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
 
     while(!terminar){
 
-        Node nodo_a_expandir = cola_nodos.top();
+        Node* nodo_a_expandir = cola_nodos.top();
         cola_nodos.pop();
 
-        expandir_nodos_hijos(nodo_a_expandir, cola_nodos, area_minima, articulos_optimos); // calcula hijos (con su f_estim y nivel_padre+1),
-                                                                                    // los mete en la cola si <= U y actualiza la solución
-                                                                                    // si <= U && ultimo nivel
+        // calcula hijos (con su f_estim y nivel_padre+1),
+        // los mete en la cola si <= U y actualiza la solución
+        // si <= U && ultimo nivel
+        expandir_nodos_hijos(nodo_a_expandir, pagina, articulos_insertados, cola_nodos, area_minima, articulos_optimos); 
 
         /*
         bool todos_mayores_que_sol = true;
         for (auto& nodo : cola_nodos) {
-            if(nodo.f_estim < area_minima){
+            if(nodo->f_estim < area_minima){
                 todos_mayores_que_sol = false;
                 break;
             }
         }
         */
-        if(cola_nodos.empty() || todos_mayores_que_sol) {
+        if(cola_nodos.empty() /*|| todos_mayores_que_sol*/) {
             terminar = true;
         }
     }
@@ -109,12 +110,12 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
     return area_minima;
 }
 
-void expandir_nodos_hijos(Node nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node, vector<Node>, CompareNodes> cola_nodos, 
+void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos, 
                    int& area_minima, vector<Articulo>& articulos_optimos){
                     
-    art_insertados.push_back(pagina.articulos[nodo_a_expandir.nivel]);
-    Node* nodo_izq = new Node(art_insertados, nodo_a_expandir.id + "-" + to_string(pagina.articulos[nodo_a_expandir.nivel].id), pagina.area);
-    nodo_izq->f_estim = calcular_func_estimacion();
+    art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
+    Node* nodo_izq = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+    nodo_izq->f_estim = calcular_func_estimacion(nodo_izq, pagina, pagina.articulos);
 
     if(nodo_izq->f_estim <= area_minima){
         cola_nodos.push(nodo_izq);
@@ -127,9 +128,10 @@ void expandir_nodos_hijos(Node nodo_a_expandir, Pagina pagina, vector<Articulo> 
 
     art_insertados.pop_back();
     
-    Node* nodo_dch = new Node(art_insertados, nodo_a_expandir.id + "-/", pagina.area); // no metemos el articulo nuevo
-    nodo_dch->nivel = nodo_a_expandir.nivel + 1;
-    nodo_dch->f_estim = calcular_func_estimacion();
+    Node* nodo_dch = new Node(art_insertados, nodo_a_expandir->id + "-/", pagina.area); // no metemos el articulo nuevo
+    nodo_dch->nivel = nodo_a_expandir->nivel + 1;
+    nodo_dch->f_estim = calcular_func_estimacion(nodo_dch, pagina, pagina.articulos); // Llamar con pagina.articulos en calcular_func_estimacion esta bien? 
+                                                                                      // Tiene todos los articulos, no los restantes
 
     if(nodo_dch->f_estim <= area_minima){
         cola_nodos.push(nodo_dch);
@@ -240,6 +242,7 @@ int calcular_area_articulos_sin_solapar(vector<Articulo> articulos_sin_solapar){
     for (auto& articulo : articulos_sin_solapar){
         total = total + articulo.area;
     }
+    return total;
 }
 
 int area_restante_maxima(const Pagina& pagina, const vector<Articulo>& articulos_actuales, int nivel){
@@ -253,7 +256,7 @@ int area_restante_maxima(const Pagina& pagina, const vector<Articulo>& articulos
 
 
 int calcular_func_estimacion(Node* nodo, Pagina pagina, vector<Articulo> art_restantes){
-    int area_heuristica = area_restante_maxima(pagina, art_restantes, nodo.nivel);
+    int area_heuristica = area_restante_maxima(pagina, art_restantes, nodo->nivel);
     int area_sin_ocupar_total = calcular_area_articulos_sin_solapar(art_restantes);
     return pagina.area - area_sin_ocupar_total - area_heuristica;
 

@@ -1,0 +1,13 @@
+
+creamos cola vacia
+metemos en cola el nodo raiz
+mientras(nodos en cola)
+    elegimos nodo minimo de la cola
+    expandimos nodo minimo
+    si funcion estimacion de nodo <= U (area_maxima_hasta_ahora)
+        añadimos nodo a la cola
+        si es nivel == num_art (ultimo nivel, nodo solucion)
+            U (area maxima) = area nodo
+fin mientras
+si cola es vacia o (funcion de todos los nodos de la cola) >= U (area maxima)
+    fin algoritmo, tenemos solucion = U
