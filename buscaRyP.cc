@@ -83,14 +83,14 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
 
     bool terminar = false;
 
-    while(!terminar){
+    while(!cola_nodos.empty()){
 
+        // Extraemos el nodo mínimo de la cola 
         Node* nodo_a_expandir = cola_nodos.top();
         cola_nodos.pop();
 
-        // calcula hijos (con su f_estim y nivel_padre+1),
-        // los mete en la cola si <= U y actualiza la solución
-        // si <= U && ultimo nivel
+        // Expandimos el nodo mínimo
+        // calcula hijos (con su f_estim y nivel_padre+1), los mete en la cola si <= U y actualiza la solución si <= U && ultimo nivel
         expandir_nodos_hijos(nodo_a_expandir, pagina, articulos_insertados, cola_nodos, area_minima, articulos_optimos); 
 
         /*
@@ -101,43 +101,43 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
                 break;
             }
         }
-        */
-        if(cola_nodos.empty() /*|| todos_mayores_que_sol*/) {
+        
+        if(cola_nodos.empty() || todos_mayores_que_sol) {
             terminar = true;
         }
+        */
     }
-
     return area_minima;
 }
 
-void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos, 
-                   int& area_minima, vector<Articulo>& articulos_optimos){
+void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, 
+                          vector<Node*>, CompareNodes> cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos){
                     
     art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
-    Node* nodo_izq = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
-    nodo_izq->f_estim = calcular_func_estimacion(nodo_izq, pagina);
+    nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+    nodo_a_expandir->left->f_estim = calcular_func_estimacion(nodo_a_expandir->left, pagina);
 
-    if(nodo_izq->f_estim <= area_minima){
-        cola_nodos.push(nodo_izq);
+    if(nodo_a_expandir->left->f_estim <= area_minima){
+        cola_nodos.push(nodo_a_expandir->left);
 
-        if(nodo_izq->nivel == pagina.num_articulos){
-            area_minima = nodo_izq->area_sin_ocupar;
-            articulos_optimos = nodo_izq->articulos;
+        if(nodo_a_expandir->left->nivel == pagina.num_articulos){
+            area_minima = nodo_a_expandir->left->area_sin_ocupar;
+            articulos_optimos = nodo_a_expandir->left->articulos;
         }
     }
 
     art_insertados.pop_back();
     
-    Node* nodo_dch = new Node(art_insertados, nodo_a_expandir->id + "-/", pagina.area); // no metemos el articulo nuevo
-    nodo_dch->nivel = nodo_a_expandir->nivel + 1;
-    nodo_dch->f_estim = calcular_func_estimacion(nodo_dch, pagina);
+    nodo_a_expandir->right = new Node(art_insertados, nodo_a_expandir->id + "-/", pagina.area); // no metemos el articulo nuevo
+    nodo_a_expandir->right->nivel = nodo_a_expandir->nivel + 1;
+    nodo_a_expandir->right->f_estim = calcular_func_estimacion(nodo_a_expandir->right, pagina);
 
-    if(nodo_dch->f_estim <= area_minima){
-        cola_nodos.push(nodo_dch);
+    if(nodo_a_expandir->right->f_estim <= area_minima){
+        cola_nodos.push(nodo_a_expandir->right);
 
-        if(nodo_dch->nivel == pagina.num_articulos){
-            area_minima = nodo_dch->area_sin_ocupar;
-            articulos_optimos = nodo_dch->articulos;
+        if(nodo_a_expandir->right->nivel == pagina.num_articulos){
+            area_minima = nodo_a_expandir->right->area_sin_ocupar;
+            articulos_optimos = nodo_a_expandir->right->articulos;
         }
     }
 }
@@ -216,7 +216,13 @@ int calcular_area_articulos_solapados(const vector<Articulo>& articulos) {
     return interseccion.area;
 }
 
-// Calcula el área actual ocupada por los articulos pasados por parámetro
+/**
+ * @brief 
+ * Calcula el área actual ocupada por los articulos pasados por parámetro
+ * 
+ * @param articulos 
+ * @return int 
+ */
 int calcular_area(const vector<Articulo>& articulos) {
     int area_total = 0;
 
@@ -236,29 +242,62 @@ int calcular_area(const vector<Articulo>& articulos) {
     return area_total;
 }
 
-int calcular_area_articulos_sin_solapar(vector<Articulo> articulos_sin_solapar){
-    int total = 0;
-    for (auto& articulo : articulos_sin_solapar){
-        total = total + articulo.area;
+/**
+ * @brief 
+ * 
+ * @param art_en_pagina: Articulos ya colocados en la pagina, representarían una solución parcial
+ * @return int 
+ */
+int calcular_area_articulos_sin_solapar(vector<Articulo> arts_en_pagina){
+    int area_ocupada = 0;
+    for (auto& articulo : arts_en_pagina){
+        area_ocupada = area_ocupada + articulo.area;
     }
-    return total;
+    return area_ocupada;
 }
 
 /**
  * @brief 
  * 
+ *  Función que se encarga de calcular el area compuesta por la suma de aquellos articulos 
+ *  restantes por añadir, estos articulos no deben solaparse con los articulos actuales añadidos,
+ *  sin embargo, pueden solaparse entre ellos.
+ * 
  * @param pagina: Página que contiene los articulos
- * @param nivel: Valor que indica cuántos articulos hay añadidos 
+ * @param arts_actuales: Vector que contiene los articulos añadidos hasta el momento
  * @return int 
  */
-int area_restante_maxima(const Pagina& pagina, int nivel){
+int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_actuales){
+
+    // Debemos comprobar que los articulos que faltan por añadir no solapen con los que tenemos,
+    // sin embargo, no hace falta comprobar que solapen entre ellos (entre los restantes).
+    // Esto se consigue iterando y comprobando que los articulos restantes no solapen con los actuales.
+
+    int arts_ya_anadidos = arts_actuales.size();
+    int area_restante_posible_max = 0;
     vector<Articulo> articulos_restantes;
-    for (int i = nivel; i < pagina.num_articulos; i++){
+
+    // Obtenemos los articulos restantes
+    for (int i = arts_ya_anadidos; i < pagina.num_articulos; i++){
         articulos_restantes.push_back(pagina.articulos[i]);
     }
-    return calcular_area(articulos_restantes);
-}
 
+    cout << "Hay " << arts_ya_anadidos << " articulos anadidos" << endl;
+    cout << "Hay " << articulos_restantes.size() << " articulos restantes" << endl;
+
+    if(!(arts_actuales.size() == 0 || articulos_restantes.size() == 0)){
+        // Hacemos la comprobación con los articulos actuales 
+        for(int i = 0; i < articulos_restantes.size(); i++){
+            for(int j = 0; j < arts_actuales.size(); j++){
+                cout << "Comparo " << arts_actuales[j].id << " con " << articulos_restantes[i].id << endl;
+                if(!hay_interseccion_entre_pareja_articulos(arts_actuales[j], articulos_restantes[i])){
+                    area_restante_posible_max = area_restante_posible_max + articulos_restantes[i].area;
+                }
+            }
+        }
+    }
+    return area_restante_posible_max;
+}
 
 /**
  * @brief 
@@ -268,10 +307,13 @@ int area_restante_maxima(const Pagina& pagina, int nivel){
  * @return int 
  */
 int calcular_func_estimacion(Node* nodo, Pagina pagina){
-    int area_heuristica = area_restante_maxima(pagina, nodo->nivel);
-    int area_sin_ocupar_total = calcular_area_articulos_sin_solapar(nodo->articulos);
-    return pagina.area - (area_sin_ocupar_total + area_heuristica);
-
+    // Area ocupada por los articulos ya colocados (solución parcial del nodo)
+    int area_ocupada_actual = calcular_area_articulos_sin_solapar(nodo->articulos);
+    // Area posible restante 
+    int area_heuristica = area_restante_posible_maxima(pagina, nodo->articulos);
+    cout << "Area total: " << pagina.area << " , Area ocupada: " << area_ocupada_actual << ", Area heuristica: " << area_heuristica 
+         <<  ", Valor de funcion de estimacion: " << pagina.area - area_ocupada_actual - area_heuristica << endl << endl;
+    return pagina.area - area_ocupada_actual - area_heuristica;
 }
 
 int main(int argc, char *argv[]){

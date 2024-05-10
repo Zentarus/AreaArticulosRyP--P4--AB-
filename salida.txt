@@ -1,5 +1,5 @@
 
 Pagina 1
-	Tiempo: 10.3337 ms
+	Tiempo: 14.4145 ms
 	Area: 0 mm
 	Articulos:

@@ -14,7 +14,7 @@ using namespace std;
 struct CompareNodes {
     bool operator()(const Node* ln, const Node* rn) {
         // Ordenar por el segundo elemento de cada par (int)
-        return ln->f_estim > rn->f_estim or ((ln->f_estim == rn->f_estim) and (ln->id > rn->id));
+        return (ln->f_estim > rn->f_estim || ((ln->f_estim == rn->f_estim) && (ln->id > rn->id)));
     }
 };
 
