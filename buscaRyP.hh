@@ -26,7 +26,7 @@ void leer_pagina(ifstream& f_in, Pagina& pagina);
 
 int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos);
 
-void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos, 
+void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, vector<Node*>, CompareNodes> &cola_nodos, 
                    int& area_minima, vector<Articulo>& articulos_optimos);
 
 void calcular_partes(const vector<Articulo>& articulos_actuales, vector<vector<Articulo>>& partes);

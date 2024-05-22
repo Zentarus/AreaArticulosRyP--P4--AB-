@@ -12,13 +12,23 @@ public:
     int alto;
     int area;
 
-    Articulo(int _id, int _ancho, int _alto, int _x, int _y) :
-        id(_id), ancho(_ancho), alto(_alto), x(_x), y(_y) {
+    Articulo(int _id, int _ancho, int _alto, int _x, int _y){
+            id = _id;
+            ancho = _ancho;
+            alto = _alto;
+            x = _x;
+            y = _y;
             area = _ancho * _alto;
         }
 
-    Articulo() :
-        id(0), ancho(0), alto(0), x(0), y(0), area(0) {}
+    Articulo(){
+            id = 0;
+            ancho = 0;
+            alto = 0;
+            x = 0;
+            y = 0;
+            area = 0;
+        }
 
     void mostrar_articulo(){
         cout << "Articulo " + id << ":" << endl;
@@ -37,4 +47,12 @@ public:
     friend bool operator<(const Articulo& a, const Articulo& b){
         return a.id < b.id;
     }
+
+    
 };
+
+std::ostream& operator<<(std::ostream& os, const Articulo& art)
+{
+    os << art.id << " " << art.x << " " << art.y << " " << art.ancho << " " << art.alto << " " << art.area;
+    return os;
+}

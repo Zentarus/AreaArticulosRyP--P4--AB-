@@ -74,24 +74,25 @@ void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<A
 int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos){
     priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos;
     vector<Articulo> articulos_insertados;
-    int area_minima = 0;
+    int area_minima = pagina.area;
 
     Node* raiz = new Node(articulos_insertados, "", pagina.area);
     raiz->nivel = 0;
     raiz->f_estim = calcular_func_estimacion(raiz, pagina); 
     cola_nodos.push(raiz);
 
-    bool terminar = false;
+    //bool terminar = false;
 
     while(!cola_nodos.empty()){
-
         // Extraemos el nodo mínimo de la cola 
         Node* nodo_a_expandir = cola_nodos.top();
         cola_nodos.pop();
 
         // Expandimos el nodo mínimo
         // calcula hijos (con su f_estim y nivel_padre+1), los mete en la cola si <= U y actualiza la solución si <= U && ultimo nivel
-        expandir_nodos_hijos(nodo_a_expandir, pagina, articulos_insertados, cola_nodos, area_minima, articulos_optimos); 
+        if(nodo_a_expandir->nivel < pagina.num_articulos){
+            expandir_nodos_hijos(nodo_a_expandir, pagina, nodo_a_expandir->articulos, cola_nodos, area_minima, articulos_optimos); 
+        }
 
         /*
         bool todos_mayores_que_sol = true;
@@ -107,17 +108,33 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
         }
         */
     }
+    cout << "COLA NODOS EMPTY" << endl;
     return area_minima;
 }
 
 void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, 
-                          vector<Node*>, CompareNodes> cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos){
-                    
+                          vector<Node*>, CompareNodes> &cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos){
+    Node n = *nodo_a_expandir; 
+    cout << "Nodo a expandir: " << n << endl;
     art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
-    nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+
+
+    // si es el primero, nos saltamos el primer "-" en el id
+    if(nodo_a_expandir->nivel == 0){
+        nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+    } else {
+        nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+    }
+
+    nodo_a_expandir->left->nivel = nodo_a_expandir->nivel + 1;
     nodo_a_expandir->left->f_estim = calcular_func_estimacion(nodo_a_expandir->left, pagina);
 
-    if(nodo_a_expandir->left->f_estim <= area_minima){
+    cout << "Func_estim izq: " << nodo_a_expandir->left->f_estim << " vs area minima " << area_minima << endl;
+
+    if(nodo_a_expandir->left->f_estim <= area_minima && nodo_a_expandir->left->f_estim >= 0){
+        cout << "Metido izquierdo:";
+        Node n2 = *nodo_a_expandir->left;
+        cout << n2;
         cola_nodos.push(nodo_a_expandir->left);
 
         if(nodo_a_expandir->left->nivel == pagina.num_articulos){
@@ -127,12 +144,22 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
     }
 
     art_insertados.pop_back();
-    
-    nodo_a_expandir->right = new Node(art_insertados, nodo_a_expandir->id + "-/", pagina.area); // no metemos el articulo nuevo
+
+    // si es el primero, nos saltamos el primer "-" en el id
+    if(nodo_a_expandir->nivel == 0){
+        nodo_a_expandir->right = new Node(art_insertados, nodo_a_expandir->id + "*", pagina.area); // no metemos el articulo nuevo
+    } else {
+        nodo_a_expandir->right = new Node(art_insertados, nodo_a_expandir->id + "-*", pagina.area); // no metemos el articulo nuevo
+    }
+
     nodo_a_expandir->right->nivel = nodo_a_expandir->nivel + 1;
     nodo_a_expandir->right->f_estim = calcular_func_estimacion(nodo_a_expandir->right, pagina);
 
-    if(nodo_a_expandir->right->f_estim <= area_minima){
+    cout << "Func_estim dcha: " << nodo_a_expandir->right->f_estim << " vs area minima " << area_minima << endl;
+    if(nodo_a_expandir->right->f_estim <= area_minima && nodo_a_expandir->right->f_estim >= 0){
+        cout << "Metido derecho:";
+        Node n1 = *nodo_a_expandir->right;
+        cout << n1;
         cola_nodos.push(nodo_a_expandir->right);
 
         if(nodo_a_expandir->right->nivel == pagina.num_articulos){
@@ -143,17 +170,17 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
 }
 
 void calcular_partes(const vector<Articulo>& articulos_actuales, vector<vector<Articulo>>& partes){
-    for (int i = 0; i < articulos_actuales.size(); i++)
+    for (int i = 0; i < (int)articulos_actuales.size(); i++)
     {
         vector<Articulo> empty;
         partes.push_back( empty );
 
         vector< vector<Articulo> > subset_temp = partes;  //making a copy of given 2-d vector.
         
-        for (int j = 0; j < subset_temp.size(); j++)
+        for (int j = 0; j < (int)subset_temp.size(); j++)
             subset_temp[j].push_back( articulos_actuales[i] );   // adding set[i] element to each subset of subsetTemp. like adding {2}(in 2nd iteration  to {{},{1}} which gives {{2},{1,2}}.
         
-        for (int j = 0; j < subset_temp.size(); j++)
+        for (int j = 0; j < (int)subset_temp.size(); j++)
             partes.push_back( subset_temp[j] );  //now adding modified subsetTemp to original subset (before{{},{1}} , after{{},{1},{2},{1,2}})
     }
 
@@ -169,8 +196,8 @@ bool hay_interseccion_entre_pareja_articulos(Articulo a, Articulo b){
 }
 
 bool intersecan_todos_articulos(const vector<Articulo>& articulos) {
-    for(int i = 0; i < articulos.size(); i++){
-        for(int j = i+1; j < articulos.size(); j++){
+    for(int i = 0; i < (int)articulos.size(); i++){
+        for(int j = i+1; j < (int)articulos.size(); j++){
             if(!hay_interseccion_entre_pareja_articulos(articulos[i], articulos[j])){
                 return false;
             }
@@ -209,7 +236,7 @@ int calcular_area_articulos_solapados(const vector<Articulo>& articulos) {
     }
 
     Articulo interseccion = articulos[0];
-    for(int i = 1; i < articulos.size(); i++){
+    for(int i = 1; i < (int)articulos.size(); i++){
         interseccion = calcular_articulo_interseccion_pareja(interseccion, articulos[i]);
     }
 
@@ -282,14 +309,21 @@ int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_act
         articulos_restantes.push_back(pagina.articulos[i]);
     }
 
+
     cout << "Hay " << arts_ya_anadidos << " articulos anadidos" << endl;
     cout << "Hay " << articulos_restantes.size() << " articulos restantes" << endl;
 
-    if(!(arts_actuales.size() == 0 || articulos_restantes.size() == 0)){
+    int cont = 0;
+    for(Articulo a : arts_actuales){
+        cout << "Art actual " << cont << ": " << a << endl;
+        cont++;
+    }
+
+    if(arts_actuales.size() != 0 && articulos_restantes.size() != 0){
         // Hacemos la comprobación con los articulos actuales 
-        for(int i = 0; i < articulos_restantes.size(); i++){
-            for(int j = 0; j < arts_actuales.size(); j++){
-                cout << "Comparo " << arts_actuales[j].id << " con " << articulos_restantes[i].id << endl;
+        for(int i = 0; i < (int)articulos_restantes.size(); i++){
+            for(int j = 0; j < (int)arts_actuales.size(); j++){
+                //cout << "Comparo " << arts_actuales[j].id << " con " << articulos_restantes[i].id << endl;
                 if(!hay_interseccion_entre_pareja_articulos(arts_actuales[j], articulos_restantes[i])){
                     area_restante_posible_max = area_restante_posible_max + articulos_restantes[i].area;
                 }
@@ -310,9 +344,12 @@ int calcular_func_estimacion(Node* nodo, Pagina pagina){
     // Area ocupada por los articulos ya colocados (solución parcial del nodo)
     int area_ocupada_actual = calcular_area_articulos_sin_solapar(nodo->articulos);
     // Area posible restante 
+    cout << endl << "============ CALCULANDO FUNC ESTIMACION DE \"" << nodo->id << "\" ============" << endl;
     int area_heuristica = area_restante_posible_maxima(pagina, nodo->articulos);
     cout << "Area total: " << pagina.area << " , Area ocupada: " << area_ocupada_actual << ", Area heuristica: " << area_heuristica 
-         <<  ", Valor de funcion de estimacion: " << pagina.area - area_ocupada_actual - area_heuristica << endl << endl;
+         <<  ", Valor de funcion de estimacion: " << pagina.area - area_ocupada_actual - area_heuristica << endl;
+    cout << "=================================================================" << endl << endl;
+
     return pagina.area - area_ocupada_actual - area_heuristica;
 }
 

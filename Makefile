@@ -3,7 +3,7 @@ PROGRAMA = buscaRyP
 
 # Compilador y flags
 CXX = g++
-CXXFLAGS = -std=c++11 -Wall -Wextra
+CXXFLAGS = -std=c++11 -lstdc++ -Wall -Wextra
 
 # Directorios de inclusión
 INC_DIR = librerias

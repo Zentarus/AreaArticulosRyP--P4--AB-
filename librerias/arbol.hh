@@ -74,4 +74,14 @@ class Node {
 };
 
 
+std::ostream& operator<<(std::ostream& os, const Node& n)
+{
+    os << "NODO - id: \"" << n.id << "\", nivel:" << n.nivel << endl << "articulos:" << endl;
+    for (Articulo art : n.articulos){
+        os << art << endl;
+    }
+    os << endl;
+    return os;
+}
+
 
