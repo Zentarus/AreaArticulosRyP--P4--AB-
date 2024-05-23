@@ -1,8 +1,0 @@
-
-Pagina 1
-	Tiempo: 15.0846 ms
-	Area: 0 mm
-	Articulos:
-		3 7 0 0 (Area: 21 mm)
-		6 7 3 0 (Area: 42 mm)
-		3 7 9 0 (Area: 21 mm)
