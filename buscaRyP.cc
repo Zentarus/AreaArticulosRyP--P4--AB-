@@ -70,6 +70,19 @@ void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<A
     f_out << endl;
 }
 
+void imprimir_solucion_por_pantalla(int num_pag, int area_solucion, vector<Articulo> art_solucion, long double tiempo_ejecucion){
+    cout << endl;
+
+    cout << "Pagina " << num_pag << endl << "\tTiempo: " << tiempo_ejecucion << " ms" << endl << "\tArea: " << area_solucion << " mm" << endl << "\tArticulos:";
+    for(Articulo art : art_solucion){
+        cout << endl << "\t\t";
+        cout << art.ancho << " " << art.alto << " " << art.x << " " << art.y << " (Area: " << art.area << " mm)";
+    }
+
+    cout << endl;
+}
+
+
 
 int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos){
     priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos;
@@ -112,38 +125,60 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
     return area_minima;
 }
 
+// Comprueba si hay intersección entre el artículo actual y los articulos colocados anteriormente
+bool hay_interseccion_con_sig_articulo(const vector<Articulo>& articulos_actuales, const Articulo& sig_articulo) {
+    const Articulo& articulo_actual = sig_articulo;
+
+    for (int i = 0; i < (int)articulos_actuales.size(); ++i) {
+        const Articulo& articulo_anterior = articulos_actuales[i];
+        
+        // Comprueba si hay intersección entre los artículos
+        if (hay_interseccion_entre_pareja_articulos(articulo_actual, articulo_anterior)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, 
                           vector<Node*>, CompareNodes> &cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos){
     Node n = *nodo_a_expandir; 
     cout << "Nodo a expandir: " << n << endl;
-    art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
+    
 
+    // si no interseca, EXPANDE EL HIJO IZQUIERDO
 
-    // si es el primero, nos saltamos el primer "-" en el id
-    if(nodo_a_expandir->nivel == 0){
-        nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
-    } else {
-        nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
-    }
+    if(!hay_interseccion_con_sig_articulo(art_insertados, pagina.articulos[nodo_a_expandir->nivel])){ 
+        art_insertados.push_back(pagina.articulos[nodo_a_expandir->nivel]);
 
-    nodo_a_expandir->left->nivel = nodo_a_expandir->nivel + 1;
-    nodo_a_expandir->left->f_estim = calcular_func_estimacion(nodo_a_expandir->left, pagina);
-
-    cout << "Func_estim izq: " << nodo_a_expandir->left->f_estim << " vs area minima " << area_minima << endl;
-
-    if(nodo_a_expandir->left->f_estim <= area_minima && nodo_a_expandir->left->f_estim >= 0){
-        cout << "Metido izquierdo:";
-        Node n2 = *nodo_a_expandir->left;
-        cout << n2;
-        cola_nodos.push(nodo_a_expandir->left);
-
-        if(nodo_a_expandir->left->nivel == pagina.num_articulos){
-            area_minima = nodo_a_expandir->left->area_sin_ocupar;
-            articulos_optimos = nodo_a_expandir->left->articulos;
+        // si es el primero, nos saltamos el primer "-" en el id
+        if(nodo_a_expandir->nivel == 0){
+            nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
+        } else {
+            nodo_a_expandir->left = new Node(art_insertados, nodo_a_expandir->id + "-" + to_string(pagina.articulos[nodo_a_expandir->nivel].id), pagina.area);
         }
-    }
 
-    art_insertados.pop_back();
+        nodo_a_expandir->left->nivel = nodo_a_expandir->nivel + 1;
+        nodo_a_expandir->left->f_estim = calcular_func_estimacion(nodo_a_expandir->left, pagina);
+
+        cout << "Func_estim izq: " << nodo_a_expandir->left->f_estim << " vs area minima " << area_minima << endl;
+
+        if(nodo_a_expandir->left->f_estim <= area_minima && nodo_a_expandir->left->f_estim >= 0){
+            cout << "Metido izquierdo:";
+            Node n2 = *nodo_a_expandir->left;
+            cout << n2;
+            cola_nodos.push(nodo_a_expandir->left);
+
+            if(nodo_a_expandir->left->nivel == pagina.num_articulos){
+                area_minima = nodo_a_expandir->left->area_sin_ocupar;
+                articulos_optimos = nodo_a_expandir->left->articulos;
+            }
+        }
+
+        art_insertados.pop_back();
+    }
+    
+    // EXPANDE EL HIJO DERECHO
 
     // si es el primero, nos saltamos el primer "-" en el id
     if(nodo_a_expandir->nivel == 0){
@@ -294,30 +329,38 @@ int calcular_area_articulos_sin_solapar(vector<Articulo> arts_en_pagina){
  * @param arts_actuales: Vector que contiene los articulos añadidos hasta el momento
  * @return int 
  */
-int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_actuales){
+int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_actuales, int nivel){
 
     // Debemos comprobar que los articulos que faltan por añadir no solapen con los que tenemos,
     // sin embargo, no hace falta comprobar que solapen entre ellos (entre los restantes).
     // Esto se consigue iterando y comprobando que los articulos restantes no solapen con los actuales.
 
     int arts_ya_anadidos = arts_actuales.size();
-    int area_restante_posible_max = 0;
+    //int area_restante_posible_max = 0;
     vector<Articulo> articulos_restantes;
 
-    // Obtenemos los articulos restantes
-    for (int i = arts_ya_anadidos; i < pagina.num_articulos; i++){
-        articulos_restantes.push_back(pagina.articulos[i]);
+    // Obtenemos los articulos restantes que no se solapan con los actuales
+    for (int i = nivel; i < pagina.num_articulos; i++){     // Nodo de nivel 3 valora el artículo 3, que está en la pos. 2 del array pagina.articulos.
+                                                        // Como queremos el siguiente artículo, dejamos i = nivel porque será el de la pos. 3 del array
+        
+        if(!hay_interseccion_con_sig_articulo(arts_actuales, pagina.articulos[i])){
+            articulos_restantes.push_back(pagina.articulos[i]); 
+        }
     }
 
 
     cout << "Hay " << arts_ya_anadidos << " articulos anadidos" << endl;
-    cout << "Hay " << articulos_restantes.size() << " articulos restantes" << endl;
+    cout << "Hay " << pagina.num_articulos - nivel << " articulos restantes" << endl;
 
     int cont = 0;
     for(Articulo a : arts_actuales){
         cout << "Art actual " << cont << ": " << a << endl;
         cont++;
     }
+
+    return calcular_area_articulos_solapados(articulos_restantes);
+
+    /*
 
     if(arts_actuales.size() != 0 && articulos_restantes.size() != 0){
         // Hacemos la comprobación con los articulos actuales 
@@ -331,6 +374,7 @@ int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_act
         }
     }
     return area_restante_posible_max;
+    */
 }
 
 /**
@@ -345,7 +389,7 @@ int calcular_func_estimacion(Node* nodo, Pagina pagina){
     int area_ocupada_actual = calcular_area_articulos_sin_solapar(nodo->articulos);
     // Area posible restante 
     cout << endl << "============ CALCULANDO FUNC ESTIMACION DE \"" << nodo->id << "\" ============" << endl;
-    int area_heuristica = area_restante_posible_maxima(pagina, nodo->articulos);
+    int area_heuristica = area_restante_posible_maxima(pagina, nodo->articulos, nodo->nivel);
     cout << "Area total: " << pagina.area << " , Area ocupada: " << area_ocupada_actual << ", Area heuristica: " << area_heuristica 
          <<  ", Valor de funcion de estimacion: " << pagina.area - area_ocupada_actual - area_heuristica << endl;
     cout << "=================================================================" << endl << endl;
@@ -381,6 +425,7 @@ int main(int argc, char *argv[]){
         tiempo_ejecucion = duracion.count();
 
         imprimir_solucion(f_out, num_pag, area_solucion, articulos_solucion, tiempo_ejecucion);
+        imprimir_solucion_por_pantalla(num_pag, area_solucion, articulos_solucion, tiempo_ejecucion);
         num_pag++;
     }
     
