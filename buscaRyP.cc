@@ -58,10 +58,10 @@ void leer_pagina(ifstream& f_in, Pagina& pagina){
     pagina.articulos = v_articulos;
 }
 
-void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<Articulo> art_solucion, long double tiempo_ejecucion){
+void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<Articulo> art_solucion, long double tiempo_ejecucion, int nodos_expandidos){
     f_out << endl;
 
-    f_out << "Pagina " << num_pag << endl << "\tTiempo: " << tiempo_ejecucion << " ms" << endl << "\tArea: " << area_solucion << " mm" << endl << "\tArticulos:";
+    f_out << "Pagina " << num_pag << endl << "\tTiempo: " << tiempo_ejecucion << " ms" << endl << "\tNodos expandidos: " << nodos_expandidos << endl << "\tArea: " << area_solucion << " mm" << endl << "\tArticulos:";
     for(Articulo art : art_solucion){
         f_out << endl << "\t\t";
         f_out << art.ancho << " " << art.alto << " " << art.x << " " << art.y << " (Area: " << art.area << " mm)";
@@ -70,10 +70,10 @@ void imprimir_solucion(ofstream& f_out, int num_pag, int area_solucion, vector<A
     f_out << endl;
 }
 
-void imprimir_solucion_por_pantalla(int num_pag, int area_solucion, vector<Articulo> art_solucion, long double tiempo_ejecucion){
+void imprimir_solucion_por_pantalla(int num_pag, int area_solucion, vector<Articulo> art_solucion, long double tiempo_ejecucion, int nodos_expandidos){
     cout << endl;
 
-    cout << "Pagina " << num_pag << endl << "\tTiempo: " << tiempo_ejecucion << " ms" << endl << "\tArea: " << area_solucion << " mm" << endl << "\tArticulos:";
+    cout << "Pagina " << num_pag << endl << "\tTiempo: " << tiempo_ejecucion << " ms" << "\tNodos expandidos: " << nodos_expandidos << endl << "\tArea: " << area_solucion << " mm" << endl << "\tArticulos:";
     for(Articulo art : art_solucion){
         cout << endl << "\t\t";
         cout << art.ancho << " " << art.alto << " " << art.x << " " << art.y << " (Area: " << art.area << " mm)";
@@ -84,7 +84,7 @@ void imprimir_solucion_por_pantalla(int num_pag, int area_solucion, vector<Artic
 
 
 
-int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos){
+int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optimos, int& nodos_expandidos){
     priority_queue<Node*, vector<Node*>, CompareNodes> cola_nodos;
     vector<Articulo> articulos_insertados;
     int area_minima = pagina.area;
@@ -104,7 +104,7 @@ int obtener_composicion_optima(Pagina& pagina, vector<Articulo>& articulos_optim
         // Expandimos el nodo mínimo
         // calcula hijos (con su f_estim y nivel_padre+1), los mete en la cola si <= U y actualiza la solución si <= U && ultimo nivel
         if(nodo_a_expandir->nivel < pagina.num_articulos){
-            expandir_nodos_hijos(nodo_a_expandir, pagina, nodo_a_expandir->articulos, cola_nodos, area_minima, articulos_optimos); 
+            expandir_nodos_hijos(nodo_a_expandir, pagina, nodo_a_expandir->articulos, cola_nodos, area_minima, articulos_optimos, nodos_expandidos); 
         }
 
         /*
@@ -141,7 +141,7 @@ bool hay_interseccion_con_sig_articulo(const vector<Articulo>& articulos_actuale
 }
 
 void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo> art_insertados, priority_queue<Node*, 
-                          vector<Node*>, CompareNodes> &cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos){
+                          vector<Node*>, CompareNodes> &cola_nodos, int& area_minima, vector<Articulo>& articulos_optimos, int& nodos_expandidos){
     Node n = *nodo_a_expandir; 
     cout << "Nodo a expandir: " << n << endl;
     
@@ -160,6 +160,7 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
 
         nodo_a_expandir->left->nivel = nodo_a_expandir->nivel + 1;
         nodo_a_expandir->left->f_estim = calcular_func_estimacion(nodo_a_expandir->left, pagina);
+        nodos_expandidos++;
 
         cout << "Func_estim izq: " << nodo_a_expandir->left->f_estim << " vs area minima " << area_minima << endl;
 
@@ -189,6 +190,7 @@ void expandir_nodos_hijos(Node* nodo_a_expandir, Pagina pagina, vector<Articulo>
 
     nodo_a_expandir->right->nivel = nodo_a_expandir->nivel + 1;
     nodo_a_expandir->right->f_estim = calcular_func_estimacion(nodo_a_expandir->right, pagina);
+    nodos_expandidos++;
 
     cout << "Func_estim dcha: " << nodo_a_expandir->right->f_estim << " vs area minima " << area_minima << endl;
     if(nodo_a_expandir->right->f_estim <= area_minima && nodo_a_expandir->right->f_estim >= 0){
@@ -385,6 +387,7 @@ int area_restante_posible_maxima(const Pagina& pagina, vector<Articulo> arts_act
  * @return int 
  */
 int calcular_func_estimacion(Node* nodo, Pagina pagina){
+
     // Area ocupada por los articulos ya colocados (solución parcial del nodo)
     int area_ocupada_actual = calcular_area_articulos_sin_solapar(nodo->articulos);
     // Area posible restante 
@@ -403,6 +406,7 @@ int main(int argc, char *argv[]){
     ofstream f_out;
     int num_pag = 1;
     int area_solucion = 0;
+    int nodos_expandidos = 0;
     vector<Articulo> articulos_solucion = {};
 
     if (argc < 3){
@@ -418,14 +422,14 @@ int main(int argc, char *argv[]){
         leer_pagina(f_in, pagina);
 
         auto start_time = chrono::high_resolution_clock::now();
-        area_solucion = obtener_composicion_optima(pagina, articulos_solucion);
+        area_solucion = obtener_composicion_optima(pagina, articulos_solucion, nodos_expandidos);
         auto end_time = chrono::high_resolution_clock::now();
         
         auto duracion = chrono::duration_cast<chrono::nanoseconds>(end_time - start_time) / 1000000.0;
         tiempo_ejecucion = duracion.count();
 
-        imprimir_solucion(f_out, num_pag, area_solucion, articulos_solucion, tiempo_ejecucion);
-        imprimir_solucion_por_pantalla(num_pag, area_solucion, articulos_solucion, tiempo_ejecucion);
+        imprimir_solucion(f_out, num_pag, area_solucion, articulos_solucion, tiempo_ejecucion, nodos_expandidos);
+        imprimir_solucion_por_pantalla(num_pag, area_solucion, articulos_solucion, tiempo_ejecucion, nodos_expandidos);
         num_pag++;
     }
     

@@ -1,0 +1,36 @@
+
+Pagina 1
+	Tiempo: 23.8651 ms
+	Nodos expandidos: 18
+	Area: 114 mm
+	Articulos:
+		3 3 1 1 (Area: 9 mm)
+		3 3 5 1 (Area: 9 mm)
+		3 3 1 5 (Area: 9 mm)
+		3 3 5 5 (Area: 9 mm)
+
+Pagina 2
+	Tiempo: 12.4953 ms
+	Nodos expandidos: 29
+	Area: 98 mm
+	Articulos:
+		1 1 1 1 (Area: 1 mm)
+		2 3 1 3 (Area: 6 mm)
+		9 5 3 1 (Area: 45 mm)
+
+Pagina 3
+	Tiempo: 14.9995 ms
+	Nodos expandidos: 41
+	Area: 66 mm
+	Articulos:
+		3 7 0 0 (Area: 21 mm)
+		6 7 3 0 (Area: 42 mm)
+		3 7 9 0 (Area: 21 mm)
+
+Pagina 4
+	Tiempo: 26.4594 ms
+	Nodos expandidos: 59
+	Area: 78 mm
+	Articulos:
+		14 3 1 1 (Area: 42 mm)
+		14 6 1 5 (Area: 84 mm)
